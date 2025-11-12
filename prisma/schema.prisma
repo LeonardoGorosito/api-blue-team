@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+} 
+
+generator client { // <-- La línea de inicio del generator
+  provider = "prisma-client-js"
+} 
+
+
+enum Role { 
+  STUDENT 
+  ADMIN 
+}
+enum OrderStatus { 
+  PENDING 
+  PAID 
+  REJECTED 
+  CANCELLED 
+}
+enum OrderSource { 
+  SITE 
+  MANUAL 
+  EXTERNAL 
+}
+enum PaymentMethod { 
+  TRANSFER 
+  MERCADOPAGO 
+  USDT 
+}
+enum PaymentStatus { 
+  PENDING_REVIEW 
+  CONFIRMED 
+  FAILED 
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  
+  // --- CAMPOS AGREGADOS ---
+  name          String
+  lastname      String
+  age           Int?        // Int opcional (usa Int? para permitir nulo)
+  telegram      String?     // String opcional
+  masters       String[]    // Array de Strings (requiere PostgreSQL)
+  // ------------------------
+
+  role          Role      @default(STUDENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+}
+
+model Course {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  shortDesc String
+  price     Int      // centavos
+  currency  String   // "ARS" | "USD"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id])
+  buyerName  String
+  buyerEmail String
+  courseId   String
+  course     Course      @relation(fields: [courseId], references: [id])
+  status     OrderStatus @default(PENDING)
+  source     OrderSource @default(SITE)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  payments   Payment[]
+  notes      String?
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  orderId    String
+  order      Order         @relation(fields: [orderId], references: [id])
+  method     PaymentMethod
+  amount     Int
+  currency   String
+  status     PaymentStatus @default(PENDING_REVIEW)
+  providerId String?
+  receiptUrl String?
+  createdAt  DateTime @default(now())
+}

@@ -1,0 +1,93 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/generated/prisma
+
+# ----------------------------------------------------------------------
+# 1. Variables de Entorno y Secretos
+# ¡CLAVE! NUNCA subas tus credenciales o claves privadas a un repositorio.
+# ----------------------------------------------------------------------
+.env
+.env.*
+.secrets
+*.key
+*.pem
+.htaccess
+
+
+# ----------------------------------------------------------------------
+# 2. Dependencias y Directorios de Construcción
+# Directorios de módulos y compilaciones (generalmente generados)
+# ----------------------------------------------------------------------
+# Node.js
+/node_modules
+/dist
+/build
+/out
+/tmp
+npm-debug.log*
+yarn-error.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.so
+/venv
+.pytest_cache/
+
+# Ruby
+/vendor/bundle
+.bundle
+
+# Java
+/bin
+/target
+*.jar
+*.class
+
+# PHP (Composer)
+/vendor
+
+
+# ----------------------------------------------------------------------
+# 3. Logs y Datos Temporales
+# ----------------------------------------------------------------------
+*.log
+*.sqlite
+*.db
+/logs
+/temp
+/cache
+Thumbs.db
+.DS_Store
+
+
+# ----------------------------------------------------------------------
+# 4. Archivos de IDEs y Editores Específicos
+# ----------------------------------------------------------------------
+# JetBrains (IntelliJ, WebStorm, PyCharm, etc.)
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Vim
+*~
+*.swp
+.netrwhist
+
+# Emacs
+#*#
+
+# ----------------------------------------------------------------------
+# 5. Archivos de Carga del Sistema Operativo
+# ----------------------------------------------------------------------
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
