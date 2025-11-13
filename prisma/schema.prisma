@@ -33,6 +33,10 @@ enum PaymentMethod {
   TRANSFER 
   MERCADOPAGO 
   USDT 
+  SKRILL      // Nuevo
+  AIRTM       // Nuevo
+  PREX        // Nuevo
+  TIPFUNDER   // Nuevo
 }
 enum PaymentStatus { 
   PENDING_REVIEW 

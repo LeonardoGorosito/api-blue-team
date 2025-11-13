@@ -10,7 +10,6 @@ export default async function payments(app: FastifyInstance) {
   })
 
   // Transferencia (stub: recibo por multipart)
-  app.register(import('@fastify/multipart').then(m => m.default))
   app.post('/payments/transfer', async (req, reply) => {
     // TODO: guardar archivo en storage y crear Payment con status PENDING_REVIEW
     return { ok: true }
