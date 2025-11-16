@@ -82,13 +82,24 @@ export default async function orders(app: FastifyInstance) {
 
     // 3. SUBIR COMPROBANTE (POST /orders/:id/receipt)
     const uploadReceiptHandler: RouteHandlerMethod = async (req, reply) => {
+
+        // ---------------------------------
+            console.log('---------------------------------')
+            console.log('RECIBIENDO INTENTO DE SUBIDA')
+            console.log('Headers recibidos:', req.headers)
+        // ---------------------------------
+
         // @ts-ignore: Accedemos a params que no están tipados con zod
         const { id } = req.params
         
         // req.file() está tipado correctamente
         const data = await req.file() 
-        if (!data) return reply.code(400).send({ message: 'No se envió ningún archivo' })
-
+        if (!data) {
+              // --- AGREGA ESTE LOG ---
+              console.log('ERROR: req.file() está NULO. El frontend no envió bien el FormData.')
+              console.log('---------------------------------')
+              return reply.code(400).send({ message: 'No se envió ningún archivo' })
+            }
         // Crea la carpeta 'uploads' si no existe
         const uploadDir = path.join(process.cwd(), 'uploads')
         if (!fs.existsSync(uploadDir)) {
@@ -125,6 +136,8 @@ export default async function orders(app: FastifyInstance) {
         return { message: 'Comprobante subido exitosamente' }
     }
     app.post('/:id/receipt', uploadReceiptHandler)
+
+        
 
     // 4. LISTADO ADMIN (GET /orders/admin)
     const getAdminOrdersHandler: RouteHandlerMethod = async (req, reply) => {
@@ -175,4 +188,12 @@ export default async function orders(app: FastifyInstance) {
         return reply.sendFile(filename)
     }
     app.get('/uploads/:filename', { preHandler: [app.authenticate] }, serveUploadsHandler)
+
+
+
+
+
+    
 }
+
+

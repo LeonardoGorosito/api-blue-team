@@ -27,8 +27,11 @@ await app.register(fastifyStatic, {
 });
 
 // 2. CORS
-await app.register(cors, { origin: ENV.FRONTEND_URL, credentials: false })
-
+await app.register(cors, { 
+  origin: ENV.FRONTEND_URL, 
+  credentials: true, 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+})
 // 3. JWT
 await app.register(jwt, { secret: ENV.JWT_SECRET })
 
@@ -37,7 +40,6 @@ await app.register(jwt, { secret: ENV.JWT_SECRET })
 // --- y si el problema persiste, podemos intentar registrarlo de forma segura.
 await app.register(fastifyMultipart, { 
     limits: { fileSize: 5 * 1024 * 1024 },
-    attachFieldsToBody: true // Esto puede ayudar a evitar el conflicto de parser
 })
 
 // --- DECORADORES ---
