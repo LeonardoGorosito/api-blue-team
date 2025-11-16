@@ -64,6 +64,4 @@ await app.register(payments, { prefix: '/payments' })
 
 // --- INICIO ---
 
-app.listen({ port: ENV.PORT, host: '0.0.0.0' }).then(() => {
-    app.log.info(`API on http://localhost:${ENV.PORT}`)
-})
+export default app
