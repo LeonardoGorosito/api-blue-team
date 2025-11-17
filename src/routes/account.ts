@@ -24,8 +24,6 @@ export default async function account(app: FastifyInstance) {
       })
 
       // Contamos las órdenes pendientes
-      // ¡OJO! Asumo que tu estado se llama 'PENDING'. 
-      // Si usas 'pendiente', 'creada', etc., cámbialo aquí.
       const pendingPromise = prisma.order.count({
         where: {
           userId: userId,
@@ -34,12 +32,14 @@ export default async function account(app: FastifyInstance) {
       })
       
       // Contamos los cursos activos (órdenes completadas/pagadas)
-      // ¡OJO! Asumo que tu estado se llama 'COMPLETED' o 'PAID'.
-      // Si usas 'pagado', 'activo', etc., cámbialo aquí.
+      // ---
+      // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+      // ---
+      // El estado 'COMPLETED' no existe, el estado correcto es 'PAID'
       const activeCoursesPromise = prisma.order.count({
         where: {
           userId: userId,
-          status: 'COMPLETED' // o 'PAID', dependiendo de tu modelo
+          status: 'PAID' // <-- CORREGIDO (antes 'COMPLETED')
         }
       })
 
