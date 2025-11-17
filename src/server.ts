@@ -20,26 +20,25 @@ const app = Fastify({ logger: true })
 
 // --- PLUGINS ---
 
-// 1. @fastify/static (Para servir archivos de /uploads)
+// 1. @fastify/static
 await app.register(fastifyStatic, {
     root: path.join(process.cwd(), 'uploads'), 
     prefix: '/uploads/',
 });
 
-// 2. CORS (Configuración Robusta Corregida)
-// Esta es la versión que corrige el error 405
+// 2. CORS (Configuración "Hardcodeada" - A PRUEBA DE ERRORES)
 await app.register(cors, { 
   origin: (origin, callback) => {
-    // 'origin' es la URL del navegador (ej: http://localhost:5173)
-    // ENV.FRONTEND_URL es la variable de Vercel (ej: https://bue-team-alumns.vercel.app)
     
+    // --- ESTA ES LA LÍSTA MÁS IMPORTANTE ---
+    // Escribimos tu URL de frontend directamente.
     const allowedOrigins = [
-      'https://bue-team-alumns.vercel.app/',       // Tu frontend
-      'http://localhost:5173',  // Tu frontend en Local (Vite)
-      'http://localhost:3000'   // (Por si acaso usas create-react-app local)
+      'https://bue-team-alumns.vercel.app',  // <-- ¡TU FRONTEND DE PRODUCCIÓN!
+      'http://localhost:5173',              // Tu frontend en Local (Vite)
+      'http://localhost:3000'
     ];
 
-    // Permitir si el 'origin' está en la lista O si es 'undefined' (ej. Postman, apps móviles)
+    // Permitir si el 'origin' está en la lista O si es 'undefined' (Postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true) // Permitir
     } else {
@@ -47,20 +46,18 @@ await app.register(cors, {
     }
   },
   credentials: true, 
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Asegúrate que OPTIONS esté
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // ¡OPTIONS es clave!
 })
 
-// DEPLOYMENT NOTE: SEXTO PASO - REVISAR CORS
 // 3. JWT
 await app.register(jwt, { secret: ENV.JWT_SECRET })
 
-// 4. Multipart (Para manejar la subida de archivos)
+// 4. Multipart
 await app.register(fastifyMultipart, { 
     limits: { fileSize: 5 * 1024 * 1024 },
 })
 
 // --- DECORADORES ---
-
 app.decorate('authenticate', async function (req: any, reply: any) {
     try {
         await req.jwtVerify()
@@ -71,7 +68,6 @@ app.decorate('authenticate', async function (req: any, reply: any) {
 })
 
 // --- RUTAS ---
-
 await app.register(health)
 await app.register(auth, { prefix: '/auth' })
 await app.register(account, { prefix: '/account' })
@@ -81,30 +77,19 @@ await app.register(payments, { prefix: '/payments' })
 
 // --- INICIO ---
 
-// --- INICIO DEL SERVIDOR LOCAL (ESTE ES EL CÓDIGO NUEVO) ---
-// Vercel establece NODE_ENV=production, así que esto
-// no se ejecutará en Vercel, solo en tu PC (npm run dev).
+// Código para arrancar en local (npm run dev)
 if (process.env.NODE_ENV !== 'production') {
-  
   const start = async () => {
     try {
-      // Leemos el puerto del .env, o usamos 3000 por defecto
       const port = Number(ENV.PORT) || 3000;
-      
-      // '0.0.0.0' es importante para que escuche fuera de localhost si es necesario
       await app.listen({ port: port, host: '0.0.0.0' });
-      
-      // Usa el logger de Fastify que ya tienes configurado
       app.log.info(`Servidor HTTP corriendo en http://localhost:${port}`);
-      
     } catch (err) {
       app.log.error(err);
       process.exit(1);
     }
   };
-  
   start();
 }
-// --- FIN DEL SERVIDOR LOCAL ---
 
 export default app
