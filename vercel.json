@@ -1,14 +1,22 @@
 {
   "version": 2,
+
+  "functions": {
+    "src/server.ts": {
+      "maxDuration": 30
+    }
+  },
+
   "builds": [
     {
       "src": "src/server.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["prisma/schema.prisma", "node_modules/.prisma/client/**"]
+        "includeFiles": ["prisma/schema.prisma"]
       }
     }
   ],
+  
   "rewrites": [
     {
       "source": "/(.*)",
