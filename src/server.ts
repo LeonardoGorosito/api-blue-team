@@ -81,4 +81,30 @@ await app.register(payments, { prefix: '/payments' })
 
 // --- INICIO ---
 
+// --- INICIO DEL SERVIDOR LOCAL (ESTE ES EL CÓDIGO NUEVO) ---
+// Vercel establece NODE_ENV=production, así que esto
+// no se ejecutará en Vercel, solo en tu PC (npm run dev).
+if (process.env.NODE_ENV !== 'production') {
+  
+  const start = async () => {
+    try {
+      // Leemos el puerto del .env, o usamos 3000 por defecto
+      const port = Number(ENV.PORT) || 3000;
+      
+      // '0.0.0.0' es importante para que escuche fuera de localhost si es necesario
+      await app.listen({ port: port, host: '0.0.0.0' });
+      
+      // Usa el logger de Fastify que ya tienes configurado
+      app.log.info(`Servidor HTTP corriendo en http://localhost:${port}`);
+      
+    } catch (err) {
+      app.log.error(err);
+      process.exit(1);
+    }
+  };
+  
+  start();
+}
+// --- FIN DEL SERVIDOR LOCAL ---
+
 export default app

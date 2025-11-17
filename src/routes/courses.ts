@@ -1,9 +1,15 @@
+// En src/routes/courses.ts (en tu API)
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db.js'
 
 export default async function courses(app: FastifyInstance) {
-  app.get('/courses', async () => {
-    const items = await prisma.course.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } })
-    return items
+  
+  // GET /courses -> Devuelve todos los cursos
+  app.get('/', async (req, reply) => {
+    const courses = await prisma.course.findMany({
+      where: { isActive: true } 
+    })
+    return courses
   })
 }
+

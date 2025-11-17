@@ -28,39 +28,63 @@ export default async function orders(app: FastifyInstance) {
 
     // 1. CREAR ORDEN (POST /orders/)
     const createOrderHandler: RouteHandlerMethod = async (req, reply) => {
-        let userId: string | undefined
-        try { 
-            // req.jwtVerify() y req.user son accedidos directamente y tipados (gracias a fastify.d.ts)
-            // @ts-ignore - req.jwtVerify no está oficialmente en el tipo FastifyRequest, pero es inyectado.
-            await req.jwtVerify(); 
-            // @ts-ignore - req.user está inyectado por jwtVerify.
-            userId = req.user.sub 
-        } catch {}
-
-        const body = createOrderSchema.parse(req.body)
-
-        // Buscamos el curso
-        const course = await prisma.course.findUnique({ where: { slug: body.courseSlug } })
         
-        if (!course || !course.isActive) {
-            return reply.code(400).send({ message: 'Curso inexistente o inactivo' })
+        // --- 1. AÑADIMOS UN TRY/CATCH GLOBAL ---
+        try {
+            let userId: string | undefined
+            try { 
+                // @ts-ignore - req.jwtVerify no está oficialmente en el tipo FastifyRequest, pero es inyectado.
+                await req.jwtVerify(); 
+                // @ts-ignore - req.user está inyectado por jwtVerify.
+                userId = req.user.sub 
+            } catch {} // Esto está bien, permite compras anónimas
+
+            // --- 2. AÑADIMOS UN LOG PARA VER QUÉ LLEGA ---
+            app.log.info({ body: req.body }, 'Intento de crear orden. Body recibido:')
+            // ---
+
+            const body = createOrderSchema.parse(req.body)
+
+            // --- 3. AÑADIMOS LOGS DE BÚSQUEDA ---
+            app.log.info({ slug: body.courseSlug }, 'Buscando curso en la DB...')
+            // ---
+
+            const course = await prisma.course.findUnique({ where: { slug: body.courseSlug } })
+            
+            if (!course || !course.isActive) {
+                // --- 4. AÑADIMOS LOG DE ERROR ESPEFÍFICO ---
+                app.log.warn({ slug: body.courseSlug, courseFound: course }, '¡Curso no encontrado o inactivo! Enviando 400.')
+                // ---
+                return reply.code(400).send({ message: 'Curso inexistente o inactivo' })
+            }
+
+            app.log.info({ courseId: course.id }, 'Curso encontrado. Creando orden...')
+            // ---
+
+            // Creamos la orden
+            const order = await prisma.order.create({
+                data: {
+                    userId: userId || null,
+                    buyerName: body.buyerName,
+                    buyerEmail: body.buyerEmail,
+                    courseId: course.id,
+                    status: 'PENDING',
+                    source: 'SITE',
+                    notes: body.method ? `Método seleccionado: ${body.method}` : null
+                },
+                select: { id: true, status: true }
+            })
+
+            return order
+
+        } catch (error) {
+            // --- 5. ¡AQUÍ ATRAPAREMOS EL ERROR DE ZOD! ---
+            app.log.error(error, '¡ERROR AL CREAR LA ORDEN!')
+            // ---
+            
+            // Enviar una respuesta de error genérica
+            return reply.code(400).send({ message: 'Error al procesar la solicitud', error: (error as Error).message })
         }
-
-        // Creamos la orden
-        const order = await prisma.order.create({
-            data: {
-                userId: userId || null,
-                buyerName: body.buyerName,
-                buyerEmail: body.buyerEmail,
-                courseId: course.id,
-                status: 'PENDING',
-                source: 'SITE',
-                notes: body.method ? `Método seleccionado: ${body.method}` : null
-            },
-            select: { id: true, status: true }
-        })
-
-        return order
     }
     app.post('/', createOrderHandler)
 
@@ -95,10 +119,10 @@ export default async function orders(app: FastifyInstance) {
         // req.file() está tipado correctamente
         const data = await req.file() 
         if (!data) {
-              // --- AGREGA ESTE LOG ---
-              console.log('ERROR: req.file() está NULO. El frontend no envió bien el FormData.')
-              console.log('---------------------------------')
-              return reply.code(400).send({ message: 'No se envió ningún archivo' })
+                // --- AGREGA ESTE LOG ---
+                console.log('ERROR: req.file() está NULO. El frontend no envió bien el FormData.')
+                console.log('---------------------------------')
+                return reply.code(400).send({ message: 'No se envió ningún archivo' })
             }
         // Crea la carpeta 'uploads' si no existe
         const uploadDir = path.join(process.cwd(), 'uploads')
@@ -188,12 +212,4 @@ export default async function orders(app: FastifyInstance) {
         return reply.sendFile(filename)
     }
     app.get('/uploads/:filename', { preHandler: [app.authenticate] }, serveUploadsHandler)
-
-
-
-
-
-    
 }
-
-
