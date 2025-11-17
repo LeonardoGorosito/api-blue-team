@@ -34,7 +34,7 @@ await app.register(cors, {
     // ENV.FRONTEND_URL es la variable de Vercel (ej: https://bue-team-alumns.vercel.app)
     
     const allowedOrigins = [
-      ENV.FRONTEND_URL,       // Tu frontend en Producción (desde Vercel)
+      'https://bue-team-alumns.vercel.app/',       // Tu frontend
       'http://localhost:5173',  // Tu frontend en Local (Vite)
       'http://localhost:3000'   // (Por si acaso usas create-react-app local)
     ];
