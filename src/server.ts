@@ -50,6 +50,7 @@ await app.register(cors, {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Asegúrate que OPTIONS esté
 })
 
+// DEPLOYMENT NOTE: SEXTO PASO - REVISAR CORS
 // 3. JWT
 await app.register(jwt, { secret: ENV.JWT_SECRET })
 
