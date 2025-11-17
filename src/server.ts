@@ -34,20 +34,18 @@ await app.register(cors, {
     // ENV.FRONTEND_URL es la variable de Vercel (ej: https://bue-team-alumns.vercel.app)
     
     const allowedOrigins = [
-            'https://bue-team-alumns.vercel.app',
-            'https://bue-team-alumns-m8dgqtcgg-portafolioleog.vercel.app', 
-            'http://localhost:5173',
-            'http://localhost:3000'
-        ]
-
+      ENV.FRONTEND_URL,       // Tu frontend en Producción (desde Vercel)
+      'http://localhost:5173',  // Tu frontend en Local (Vite)
+      'http://localhost:3000'   // (Por si acaso usas create-react-app local)
+    ];
 
     // Permitir si el 'origin' está en la lista O si es 'undefined' (ej. Postman, apps móviles)
     if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true) // Permitir
-        } else {
-          callback(new Error('No permitido por CORS'), false) // Bloquear
-        }
-      },
+      callback(null, true) // Permitir
+    } else {
+      callback(new Error('No permitido por CORS'), false) // Bloquear
+    }
+  },
   credentials: true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Asegúrate que OPTIONS esté
 })
