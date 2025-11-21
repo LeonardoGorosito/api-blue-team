@@ -44,8 +44,8 @@ await app.register(fastifyStatic, {
 await app.register(cors, { 
   origin: (origin, callback) => {
     const allowedOrigins = [
-      ENV.FRONTEND_URL,      // prod
-      'http://localhost:5173', // dev Vite
+      ENV.FRONTEND_URL,          // ej: https://blue-7eam-alumns.vercel.app
+      'http://localhost:5173',   // dev
     ].filter(Boolean)
 
     if (!origin) {
@@ -62,6 +62,7 @@ await app.register(cors, {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
+
 
 
 
@@ -107,5 +108,15 @@ if (process.env.NODE_ENV !== 'production') {
   };
   start();
 }
+
+app.ready(err => {
+  if (err) {
+    app.log.error(err)
+    return
+  }
+  // Esto te imprime TODAS las rutas registradas
+  console.log(app.printRoutes())
+})
+
 
 export default app
