@@ -3,6 +3,8 @@ import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import { ENV } from './env.js'
 import path from 'path' // Módulo de Node.js
+import fs from 'fs'
+
 
 // plugins
 import fastifyMultipart from '@fastify/multipart'
@@ -20,33 +22,27 @@ const app = Fastify({ logger: true })
 
 // --- PLUGINS ---
 
+const uploadsPath = path.join(process.cwd(), 'uploads')
+
+if (fs.existsSync(uploadsPath)) {
+  await app.register(fastifyStatic, {
+    root: uploadsPath,
+    prefix: '/uploads/',
+  })
+} else {
+  app.log.warn(`Uploads dir ${uploadsPath} does not exist, skipping static plugin`)
+}
+
 // 1. @fastify/static
 await app.register(fastifyStatic, {
     root: path.join(process.cwd(), 'uploads'), 
     prefix: '/uploads/',
 });
 
+
 // 2. CORS (Configuración "Hardcodeada" - A PRUEBA DE ERRORES)
 await app.register(cors, { 
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'https://bue-team-alumns.vercel.app/', // FRONTEND PROD
-      'http://localhost:5173',               // LOCAL VITE
-      'http://localhost:3000',               // si usás otro
-    ]
-
-    // Permitir Postman / server interno (sin header Origin)
-    if (!origin) {
-      callback(null, true)
-      return
-    }
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('No permitido por CORS'), false)
-    }
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
