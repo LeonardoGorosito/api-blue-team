@@ -4,11 +4,12 @@ import jwt from '@fastify/jwt'
 import { ENV } from './env.js'
 import path from 'path' // Módulo de Node.js
 import fs from 'fs'
+import fastifyMultipart from '@fastify/multipart'
+import fastifyStatic from '@fastify/static'
+
 
 
 // plugins
-import fastifyMultipart from '@fastify/multipart'
-import fastifyStatic from '@fastify/static'
 
 // routes
 import health from './routes/health.js'
@@ -33,11 +34,6 @@ if (fs.existsSync(uploadsPath)) {
   app.log.warn(`Uploads dir ${uploadsPath} does not exist, skipping static plugin`)
 }
 
-// 1. @fastify/static
-await app.register(fastifyStatic, {
-    root: path.join(process.cwd(), 'uploads'), 
-    prefix: '/uploads/',
-});
 
 
 // 2. CORS (Configuración "Hardcodeada" - A PRUEBA DE ERRORES)
