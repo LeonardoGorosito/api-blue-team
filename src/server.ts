@@ -42,10 +42,27 @@ await app.register(fastifyStatic, {
 
 // 2. CORS (Configuración "Hardcodeada" - A PRUEBA DE ERRORES)
 await app.register(cors, { 
-  origin: true,
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      ENV.FRONTEND_URL,      // prod
+      'http://localhost:5173', // dev Vite
+    ].filter(Boolean)
+
+    if (!origin) {
+      callback(null, true)
+      return
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('No permitido por CORS'), false)
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
+
 
 
 // 3. JWT
