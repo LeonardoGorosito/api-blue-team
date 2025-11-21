@@ -27,9 +27,26 @@ await app.register(fastifyStatic, {
 });
 
 // 2. CORS (Configuración "Hardcodeada" - A PRUEBA DE ERRORES)
-// 2. CORS - MODO PRUEBA (permite todo)
 await app.register(cors, { 
-  origin: true,
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://bue-team-alumns.vercel.app/', // FRONTEND PROD
+      'http://localhost:5173',               // LOCAL VITE
+      'http://localhost:3000',               // si usás otro
+    ]
+
+    // Permitir Postman / server interno (sin header Origin)
+    if (!origin) {
+      callback(null, true)
+      return
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('No permitido por CORS'), false)
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
