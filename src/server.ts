@@ -27,27 +27,13 @@ await app.register(fastifyStatic, {
 });
 
 // 2. CORS (Configuración "Hardcodeada" - A PRUEBA DE ERRORES)
+// 2. CORS - MODO PRUEBA (permite todo)
 await app.register(cors, { 
-  origin: (origin, callback) => {
-    
-    // --- ESTA ES LA LÍSTA MÁS IMPORTANTE ---
-    // Escribimos tu URL de frontend directamente.
-    const allowedOrigins = [
-      'https://bue-team-alumns.vercel.app',  // <-- ¡TU FRONTEND DE PRODUCCIÓN!
-      'http://localhost:5173',              // Tu frontend en Local (Vite)
-      'http://localhost:3000'
-    ];
-
-    // Permitir si el 'origin' está en la lista O si es 'undefined' (Postman)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true) // Permitir
-    } else {
-      callback(new Error('No permitido por CORS'), false) // Bloquear
-    }
-  },
-  credentials: true, 
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // ¡OPTIONS es clave!
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
+
 
 // 3. JWT
 await app.register(jwt, { secret: ENV.JWT_SECRET })
