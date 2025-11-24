@@ -16,14 +16,14 @@ import account from './routes/account.js'
 const app = Fastify({ logger: true })
 
 // --- CORS ---
-// IMPORTANTE: Definimos explícitamente el origen del frontend
 await app.register(cors, { 
   origin: [
-    'https://blue-team-alumni.vercel.app', // Tu frontend en producción
-    'http://localhost:5173',               // Tu frontend local (Vite default)
-    'http://localhost:3000'                // Por si acaso
+    'https://bue-team-alumns.vercel.app',  // URL REAL (según tu captura de error)
+    'https://bue-team-alumns.vercel.app', // URL alternativa (por si acaso)
+    'http://localhost:5173',               // Localhost Vite
+    'http://localhost:3000'                // Localhost Backend/React clásico
   ],
-  credentials: true, // Esto debe coincidir con el frontend
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
 
@@ -46,7 +46,7 @@ app.decorate('authenticate', async function (req: any, reply: any) {
 })
 
 // --- RUTAS ---
-// Aseguramos que el endpoint base esté saludable para debug
+// Ruta raíz para verificar que el servidor vive
 app.get('/', async () => { return { status: 'ok', server: 'Blue Team API' } })
 
 await app.register(health)
