@@ -98,14 +98,15 @@ model Order {
 }
 
 model Payment {
-  id         String        @id @default(cuid())
-  orderId    String
-  order      Order         @relation(fields: [orderId], references: [id])
-  method     PaymentMethod
-  amount     Int
-  currency   String
-  status     PaymentStatus @default(PENDING_REVIEW)
+  id        String        @id @default(cuid())
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id])
+  method    PaymentMethod
+  amount    Float         // <--- CAMBIADO DE Int A Float
+  currency  String
+  status    PaymentStatus @default(PENDING_REVIEW)
   providerId String?
   receiptUrl String?
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
