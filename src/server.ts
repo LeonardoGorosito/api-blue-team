@@ -1,4 +1,3 @@
-// src/server.ts
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
@@ -14,17 +13,19 @@ import orders from './routes/orders.js'
 import payments from './routes/payments.js'
 import account from './routes/account.js'
 
-
 const app = Fastify({ logger: true })
 
-// --- CORS (versión debug: permite todo origen) ---
+// --- CORS ---
+// IMPORTANTE: Definimos explícitamente el origen del frontend
 await app.register(cors, { 
-  origin: true, // 🔥 acepta cualquier origin (refleja el Origin que llega)
-  credentials: true,
+  origin: [
+    'https://blue-team-alumni.vercel.app', // Tu frontend en producción
+    'http://localhost:5173',               // Tu frontend local (Vite default)
+    'http://localhost:3000'                // Por si acaso
+  ],
+  credentials: true, // Esto debe coincidir con el frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
-
-
 
 // --- JWT ---
 await app.register(jwt, { secret: ENV.JWT_SECRET })
@@ -45,6 +46,9 @@ app.decorate('authenticate', async function (req: any, reply: any) {
 })
 
 // --- RUTAS ---
+// Aseguramos que el endpoint base esté saludable para debug
+app.get('/', async () => { return { status: 'ok', server: 'Blue Team API' } })
+
 await app.register(health)
 await app.register(auth, { prefix: '/auth' })
 await app.register(account, { prefix: '/account' })
