@@ -14,17 +14,16 @@ import orders from './routes/orders.js'
 import payments from './routes/payments.js'
 import account from './routes/account.js'
 
+
 const app = Fastify({ logger: true })
 
-// --- CORS ---
+// --- CORS (versión debug: permite todo origen) ---
 await app.register(cors, { 
-  origin: [
-    ENV.FRONTEND_URL,        // https://bue-team-alumns.vercel.app en prod
-    'http://localhost:5173', // para desarrollo
-  ].filter(Boolean),
+  origin: true, // 🔥 acepta cualquier origin (refleja el Origin que llega)
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
+
 
 
 // --- JWT ---
