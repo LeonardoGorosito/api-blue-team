@@ -75,6 +75,7 @@ model Course {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]
+  features   String[]  // <--- Nuevo campo: Lista de beneficios para la tarjeta (card)
 
   longDescription String?  @db.Text // Texto largo
   learningPoints  String[] // Array de strings para "Lo que aprenderás"
