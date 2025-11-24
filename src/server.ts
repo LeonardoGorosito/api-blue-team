@@ -18,26 +18,14 @@ const app = Fastify({ logger: true })
 
 // --- CORS ---
 await app.register(cors, { 
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      ENV.FRONTEND_URL,
-      'http://localhost:5173',
-    ].filter(Boolean)
-
-    if (!origin) {
-      callback(null, true)
-      return
-    }
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('No permitido por CORS'), false)
-    }
-  },
+  origin: [
+    ENV.FRONTEND_URL,        // https://bue-team-alumns.vercel.app en prod
+    'http://localhost:5173', // para desarrollo
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 })
+
 
 // --- JWT ---
 await app.register(jwt, { secret: ENV.JWT_SECRET })
