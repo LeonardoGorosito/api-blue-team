@@ -68,12 +68,16 @@ model Course {
   slug      String   @unique
   title     String
   shortDesc String
-  price     Int      // centavos
+  price       Float    // Este será tu precio en ARS
+  priceUsd    Float    @default(0) // Nuevo precio en USD (le pongo default 0 para que no falle la creación)
   currency  String   // "ARS" | "USD"
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]
+
+  longDescription String?  @db.Text // Texto largo
+  learningPoints  String[] // Array de strings para "Lo que aprenderás"
 }
 
 model Order {
