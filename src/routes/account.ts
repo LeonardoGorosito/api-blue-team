@@ -1,14 +1,12 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db.js'
+import { authenticate } from '../hooks/authenticate.js'
 
 export default async function account(app: FastifyInstance) {
 
-  // Esta ruta se convertirá en GET /account/stats
-  // gracias al prefijo que pondremos en server.ts
   app.get('/stats', {
-    // ¡IMPORTANTE! Protegemos la ruta.
-    // Solo un usuario autenticado puede ver sus propias estadísticas.
-    preHandler: [app.authenticate] as any
+    // 2. CAMBIAR ESTO:
+    preHandler: [authenticate] // (Antes era [app.authenticate])
   }, async (req: any, reply) => {
     
     try {

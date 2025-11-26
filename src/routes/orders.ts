@@ -2,6 +2,7 @@ import type { FastifyInstance, RouteHandlerMethod } from 'fastify'
 import { prisma } from '../db.js' // Asegúrate que la ruta a tu prisma client sea correcta
 import { z } from 'zod'
 import { v2 as cloudinary } from 'cloudinary'
+import { authenticate } from '../hooks/authenticate.js'
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -24,7 +25,6 @@ const updateStatusSchema = z.object({
 })
 
 export default async function orders(app: FastifyInstance) {
-
   // ----------------------------
   // 1. CREAR ORDEN (POST /orders/)
   // ----------------------------
@@ -87,8 +87,7 @@ export default async function orders(app: FastifyInstance) {
   }
 
   // Asegúrate de tener el decorador 'authenticate' configurado en tu app
-  app.get('/me', { preHandler: [app.authenticate] }, getMyOrdersHandler)
-
+app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
   // ----------------------------
   // 3. SUBIR COMPROBANTE (POST /orders/:id/receipt)
   // ----------------------------
@@ -208,10 +207,9 @@ export default async function orders(app: FastifyInstance) {
     })
 
     return items
-  }
+  }   
 
-  app.get('/admin', { preHandler: [app.authenticate] }, getAdminOrdersHandler)
-
+app.get('/admin', { preHandler: [authenticate] }, getAdminOrdersHandler)
   // ----------------------------
   // 5. CAMBIAR ESTADO ADMIN (PUT /orders/:id/status)
   // ----------------------------
@@ -232,5 +230,4 @@ export default async function orders(app: FastifyInstance) {
     return updatedOrder
   }
 
-  app.put('/:id/status', { preHandler: [app.authenticate] }, updateStatusHandler)
-}
+app.put('/:id/status', { preHandler: [authenticate] }, updateStatusHandler)}

@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import bcrypt from 'bcrypt'
 import { prisma } from '../db.js'
+import { authenticate } from '../hooks/authenticate.js'
 
 // --- ESQUEMAS ZOD ---
 // (Los esquemas no cambian, los incluyo para que el archivo esté completo)
@@ -27,7 +28,6 @@ const loginSchema = z.object({
 // El 'app' aquí es un 'namespace' encapsulado.
 // Fastify manejará el prefijo '/auth' automáticamente.
 export default async function auth(app: FastifyInstance) {
-
     // ------------------------------------------
     // RUTA DE REGISTRO: POST /register
     // (Se convierte en POST /auth/register gracias al prefijo en server.ts)
@@ -96,12 +96,12 @@ export default async function auth(app: FastifyInstance) {
         return { token }
     })
 
-
+    
     // ------------------------------------------
     // RUTA DE USUARIO ACTUAL: GET /me
     // (Se convierte en GET /auth/me)
     // ------------------------------------------
-    app.get('/me', { preHandler: [app.authenticate] as any }, async (req: any) => { // CAMBIO: Se quitó '/auth'
+    app.get('/me', { preHandler: [authenticate] }, async (req: any) => { 
         const me = await prisma.user.findUnique({ 
             where: { id: req.user.sub }, 
             select: { id: true, email: true, name: true, role: true } 
