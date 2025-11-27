@@ -20,7 +20,8 @@ await app.register(cors, {
   origin: [
     'http://localhost:5173', // Tu frontend Vite
     'http://localhost:3000',
-    'https://bue-team-alumns.vercel.app' 
+    'https://blue7eamalumnas.com',      // <--- EL NUEVO DOMINIO
+    'https://www.blue7eamalumnas.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
