@@ -67,7 +67,7 @@ model Course {
   id        String   @id @default(cuid())
   slug      String   @unique
   title     String
-  shortDesc String
+  accessLink String?
   price       Float    // Este será tu precio en ARS
   priceUsd    Float    @default(0) // Nuevo precio en USD (le pongo default 0 para que no falle la creación)
   currency  String   // "ARS" | "USD"
