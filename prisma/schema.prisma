@@ -71,11 +71,12 @@ model Course {
   price       Float    // Este será tu precio en ARS
   priceUsd    Float    @default(0) // Nuevo precio en USD (le pongo default 0 para que no falle la creación)
   currency  String   // "ARS" | "USD"
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
-  features   String[]  // <--- Nuevo campo: Lista de beneficios para la tarjeta (card)
+isActive  Boolean  @default(true) 
+isComingSoon Boolean @default(false) 
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+orders    Order[]
+features   String[]  // <--- Nuevo campo: Lista de beneficios para la tarjeta (card)
 
   longDescription String?  @db.Text // Texto largo
   learningPoints  String[] // Array de strings para "Lo que aprenderás"
