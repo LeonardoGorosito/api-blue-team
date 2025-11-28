@@ -4,15 +4,12 @@ import { prisma } from '../db.js'
 import { z } from 'zod'
 import { v2 as cloudinary } from 'cloudinary'
 import { authenticate } from '../hooks/authenticate.js'
-// BORRA EL IMPORT DE NODEMAILER AQUÍ
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
-
-// BORRA LA CONFIGURACIÓN DEL TRANSPORTER AQUÍ
 
 const createOrderSchema = z.object({
   buyerName: z.string().min(2),
@@ -51,6 +48,7 @@ export default async function orders(app: FastifyInstance) {
           courseId: course.id,
           status: 'PENDING',
           source: 'SITE',
+          // Guardamos el nombre "crudo" (ej: NaranjaX) en las notas para referencia humana
           notes: body.method ? `Método seleccionado: ${body.method}` : null
         },
         select: { id: true, status: true }
@@ -75,7 +73,7 @@ export default async function orders(app: FastifyInstance) {
   }
   app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
 
-  // 3. SUBIR COMPROBANTE (SIN EMAIL)
+  // 3. SUBIR COMPROBANTE (CORREGIDO PARA EVITAR ERROR 500)
   const uploadReceiptHandler: RouteHandlerMethod = async (req: any, reply) => {
     const { id } = req.params
     const data = await req.file()
@@ -110,19 +108,36 @@ export default async function orders(app: FastifyInstance) {
 
     if (!order) return reply.code(404).send({ message: 'Orden no encontrada' })
 
-    let methodDetected = 'TRANSFER'
+    // --- LÓGICA DE MAPEO SEGURA (SAFE MAPPING) ---
+    
+    // 1. Estos son los ÚNICOS valores que tu Base de Datos acepta
+    const validDbEnums = ['TRANSFER', 'MERCADOPAGO', 'USDT', 'SKRILL', 'AIRTM', 'PREX', 'TIPFUNDER']
+
+    // 2. Leemos qué eligió el usuario (ej: "NaranjaX", "USDT", "Tipfunder")
+    const noteMethodRaw = order.notes?.split(': ')[1]?.trim()
+
+    // 3. Definimos valores por defecto (Seguros)
+    let methodToSave = 'TRANSFER' // Si falla todo, se guarda como TRANSFER (que sirve para NaranjaX)
     let finalAmount = order.course.price
     let finalCurrency = order.course.currency
-    const noteMethod = order.notes?.split(': ')[1]?.trim()
-    const usdMethods = ['USDT', 'SKRILL', 'AIRTM', 'PREX', 'TIPFUNDER']
 
-    if (noteMethod && usdMethods.includes(noteMethod)) {
-       methodDetected = noteMethod
-       finalAmount = order.course.priceUsd
-       finalCurrency = 'USD'
-    } else if (noteMethod) {
-       methodDetected = noteMethod
+    if (noteMethodRaw) {
+        // A. Lógica de Moneda (Dólares)
+        const usdMethods = ['USDT', 'SKRILL', 'AIRTM', 'PREX', 'TIPFUNDER']
+        if (usdMethods.includes(noteMethodRaw)) {
+            finalAmount = order.course.priceUsd
+            finalCurrency = 'USD'
+        }
+
+        // B. Validación contra la Base de Datos
+        // Si el método (ej: TIPFUNDER) existe en tu DB, úsalo.
+        // Si el método (ej: NaranjaX) NO existe, se queda como 'TRANSFER'.
+        if (validDbEnums.includes(noteMethodRaw)) {
+            methodToSave = noteMethodRaw
+        }
     }
+
+    // --- FIN LÓGICA SEGURA ---
 
     const pendingPayment = order.payments.find(p => p.status === 'PENDING_REVIEW')
 
@@ -133,14 +148,15 @@ export default async function orders(app: FastifyInstance) {
           receiptUrl: uploadResult.secure_url,
           updatedAt: new Date(),
           amount: finalAmount,
-          currency: finalCurrency
+          currency: finalCurrency,
+          // method: No lo actualizamos si ya existe para evitar conflictos, o podrías forzarlo aquí también
         }
       })
     } else {
       await prisma.payment.create({
         data: {
           orderId: id,
-          method: methodDetected as any,
+          method: methodToSave as any, // Ahora methodToSave SIEMPRE es válido (ej: TRANSFER o TIPFUNDER)
           amount: finalAmount,
           currency: finalCurrency,
           status: 'PENDING_REVIEW',
@@ -148,8 +164,6 @@ export default async function orders(app: FastifyInstance) {
         }
       })
     }
-
-    // AQUI BORRAMOS TODO EL BLOQUE DEL TRANSPORTER.SENDMAIL
 
     return { 
       message: 'Comprobante subido exitosamente', 
