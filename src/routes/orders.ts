@@ -1,8 +1,10 @@
+// src/routes/orders.ts
 import type { FastifyInstance, RouteHandlerMethod } from 'fastify'
-import { prisma } from '../db.js' // Asegúrate que la ruta a tu prisma client sea correcta
+import { prisma } from '../db.js'
 import { z } from 'zod'
 import { v2 as cloudinary } from 'cloudinary'
 import { authenticate } from '../hooks/authenticate.js'
+// BORRA EL IMPORT DE NODEMAILER AQUÍ
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -10,9 +12,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-// ----------------------------
-// ZOD SCHEMAS
-// ----------------------------
+// BORRA LA CONFIGURACIÓN DEL TRANSPORTER AQUÍ
+
 const createOrderSchema = z.object({
   buyerName: z.string().min(2),
   buyerEmail: z.string().email(),
@@ -25,28 +26,23 @@ const updateStatusSchema = z.object({
 })
 
 export default async function orders(app: FastifyInstance) {
-  // ----------------------------
-  // 1. CREAR ORDEN (POST /orders/)
-  // ----------------------------
+
+  // 1. CREAR ORDEN
   const createOrderHandler: RouteHandlerMethod = async (req: any, reply) => {
     try {
       let userId: string | null = null
-
-      // Intentamos obtener el usuario si está logueado, sino sigue como invitado
       try {
         await req.jwtVerify()
         userId = req.user.sub
       } catch {}
 
       const body = createOrderSchema.parse(req.body)
-
       const course = await prisma.course.findUnique({ where: { slug: body.courseSlug } })
       
       if (!course || !course.isActive) {
         return reply.code(400).send({ message: 'Curso inexistente o inactivo' })
       }
 
-      // Creamos la orden (Aún sin pago asociado)
       const order = await prisma.order.create({
         data: {
           userId,
@@ -55,62 +51,44 @@ export default async function orders(app: FastifyInstance) {
           courseId: course.id,
           status: 'PENDING',
           source: 'SITE',
-          // Guardamos el método en notas para leerlo luego al subir el comprobante
           notes: body.method ? `Método seleccionado: ${body.method}` : null
         },
         select: { id: true, status: true }
       })
 
       return order
-
     } catch (err: any) {
       app.log.error(err)
       return reply.code(400).send({ message: err.message || 'Error al crear orden' })
     }
   }
-
   app.post('/', createOrderHandler)
 
-  // ----------------------------
-  // 2. MIS COMPRAS (GET /orders/me)
-  // ----------------------------
+  // 2. MIS COMPRAS
   const getMyOrdersHandler: RouteHandlerMethod = async (req: any) => {
     const orders = await prisma.order.findMany({
       where: { userId: req.user.sub },
-      include: { 
-        course: true, 
-        payments: true 
-      },
+      include: { course: true, payments: true },
       orderBy: { createdAt: 'desc' }
     })
     return orders
   }
+  app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
 
-  // Asegúrate de tener el decorador 'authenticate' configurado en tu app
-app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
-  // ----------------------------
-  // 3. SUBIR COMPROBANTE (POST /orders/:id/receipt)
-  // ----------------------------
+  // 3. SUBIR COMPROBANTE (SIN EMAIL)
   const uploadReceiptHandler: RouteHandlerMethod = async (req: any, reply) => {
     const { id } = req.params
-
-    // A. Obtener el archivo
     const data = await req.file()
-    if (!data) {
-      return reply.code(400).send({ message: 'No se envió ningún archivo' })
-    }
+    if (!data) return reply.code(400).send({ message: 'No se envió ningún archivo' })
 
-    // B. Convertir Stream a Base64
     const chunks: Buffer[] = []
     for await (const chunk of data.file) {
       chunks.push(chunk as Buffer)
     }
     const buffer = Buffer.concat(chunks)
     const base64 = buffer.toString('base64')
-    // Usamos el mimetype original para soportar PDF, PNG, JPG, etc.
     const dataUri = `data:${data.mimetype};base64,${base64}`
 
-    // C. Subir a Cloudinary
     const folder = process.env.CLOUDINARY_UPLOAD_FOLDER || 'tuwebconleo/comprobantes'
 
     let uploadResult
@@ -118,14 +96,13 @@ app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
       uploadResult = await cloudinary.uploader.upload(dataUri, {
         folder,
         public_id: `receipt_${id}_${Date.now()}`,
-        resource_type: 'auto' // 'auto' permite subir PDFs e Imágenes
+        resource_type: 'auto'
       })
     } catch (err) {
       app.log.error(err)
       return reply.code(500).send({ message: 'Error subiendo comprobante a Cloudinary' })
     }
 
-    // D. Buscar la Orden y el Curso
     const order = await prisma.order.findUnique({
       where: { id },
       include: { course: true, payments: true }
@@ -133,28 +110,20 @@ app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
 
     if (!order) return reply.code(404).send({ message: 'Orden no encontrada' })
 
-    // E. Lógica de Moneda (ARS vs USD)
-    let methodDetected = 'TRANSFER' // Valor por defecto
-    let finalAmount = order.course.price // Valor por defecto (ARS)
-    let finalCurrency = order.course.currency // Valor por defecto (ARS)
-
-    // Leemos la nota que guardamos al crear la orden: "Método seleccionado: USDT"
+    let methodDetected = 'TRANSFER'
+    let finalAmount = order.course.price
+    let finalCurrency = order.course.currency
     const noteMethod = order.notes?.split(': ')[1]?.trim()
-    
-    // Métodos que cobran en Dólares
     const usdMethods = ['USDT', 'SKRILL', 'AIRTM', 'PREX', 'TIPFUNDER']
 
     if (noteMethod && usdMethods.includes(noteMethod)) {
        methodDetected = noteMethod
-       finalAmount = order.course.priceUsd // Cobramos el precio en USD
+       finalAmount = order.course.priceUsd
        finalCurrency = 'USD'
     } else if (noteMethod) {
        methodDetected = noteMethod
-       // finalAmount queda en ARS
     }
 
-    // F. Crear o Actualizar Pago
-    // Verificamos si ya existe un pago en revisión para no duplicar
     const pendingPayment = order.payments.find(p => p.status === 'PENDING_REVIEW')
 
     if (pendingPayment) {
@@ -163,7 +132,7 @@ app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
         data: {
           receiptUrl: uploadResult.secure_url,
           updatedAt: new Date(),
-          amount: finalAmount, // Actualizamos por si el precio cambió
+          amount: finalAmount,
           currency: finalCurrency
         }
       })
@@ -171,7 +140,7 @@ app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
       await prisma.payment.create({
         data: {
           orderId: id,
-          method: methodDetected as any, // Cast a 'any' para evitar conflictos estrictos con el Enum si TS se queja
+          method: methodDetected as any,
           amount: finalAmount,
           currency: finalCurrency,
           status: 'PENDING_REVIEW',
@@ -179,6 +148,8 @@ app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
         }
       })
     }
+
+    // AQUI BORRAMOS TODO EL BLOQUE DEL TRANSPORTER.SENDMAIL
 
     return { 
       message: 'Comprobante subido exitosamente', 
@@ -188,46 +159,27 @@ app.get('/me', { preHandler: [authenticate] }, getMyOrdersHandler)
 
   app.post('/:id/receipt', uploadReceiptHandler)
 
-  // ----------------------------
-  // 4. LISTADO ADMIN (GET /orders/admin)
-  // ----------------------------
+  // ... (El resto de admin sigue igual)
   const getAdminOrdersHandler: RouteHandlerMethod = async (req: any, reply) => {
-    // Verificación de rol
-    if (!req.user || req.user.role !== 'ADMIN') {
-      return reply.code(403).send({ message: 'Acceso denegado' })
-    }
-
+    if (!req.user || req.user.role !== 'ADMIN') return reply.code(403).send({ message: 'Acceso denegado' })
     const items = await prisma.order.findMany({
-      include: { 
-        course: true,
-        payments: true,
-        user: { select: { email: true, name: true, lastname: true } }
-      },
+      include: { course: true, payments: true, user: { select: { email: true, name: true, lastname: true } } },
       orderBy: { createdAt: 'desc' }
     })
-
     return items
-  }   
+  }
+  app.get('/admin', { preHandler: [authenticate] }, getAdminOrdersHandler)
 
-app.get('/admin', { preHandler: [authenticate] }, getAdminOrdersHandler)
-  // ----------------------------
-  // 5. CAMBIAR ESTADO ADMIN (PUT /orders/:id/status)
-  // ----------------------------
   const updateStatusHandler: RouteHandlerMethod = async (req: any, reply) => {
-    if (!req.user || req.user.role !== 'ADMIN') {
-      return reply.code(403).send({ message: 'Acceso denegado' })
-    }
-
+    if (!req.user || req.user.role !== 'ADMIN') return reply.code(403).send({ message: 'Acceso denegado' })
     const { id } = req.params
     const { status } = updateStatusSchema.parse(req.body)
-
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: { status },
       include: { user: true, course: true }
     })
-
     return updatedOrder
   }
-
-app.put('/:id/status', { preHandler: [authenticate] }, updateStatusHandler)}
+  app.put('/:id/status', { preHandler: [authenticate] }, updateStatusHandler)
+}

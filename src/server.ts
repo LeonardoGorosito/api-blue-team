@@ -19,8 +19,9 @@ const app = Fastify({ logger: true })
 
 await app.register(cors, { 
   origin: [
-    /localhost/,               // Permite cualquier puerto en localhost
-    /^https:\/\/.*blue7eamalumnas\.com$/ // Permite blue7eamalumnas.com y www.blue7eamalumnas.com
+    'http://localhost:5173',
+    'https://blue7eamalumnas.com',        // Sin barra al final
+    'https://www.blue7eamalumnas.com'     // Con www
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
