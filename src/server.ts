@@ -15,13 +15,12 @@ import admin from './routes/admin.js' // <--- Asegúrate de tener esto
 
 const app = Fastify({ logger: true })
 
-// 1. REGISTRAR CORS (SIEMPRE PRIMERO)
+// CORS
+
 await app.register(cors, { 
   origin: [
-    'http://localhost:5173', // Tu frontend Vite
-    'http://localhost:3000',
-    'https://blue7eamalumnas.com',      // <--- EL NUEVO DOMINIO
-    'https://www.blue7eamalumnas.com'
+    /localhost/,               // Permite cualquier puerto en localhost
+    /^https:\/\/.*blue7eamalumnas\.com$/ // Permite blue7eamalumnas.com y www.blue7eamalumnas.com
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
