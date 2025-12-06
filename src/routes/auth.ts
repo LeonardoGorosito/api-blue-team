@@ -129,7 +129,7 @@ export default async function auth(app: FastifyInstance) {
             await resend.emails.send({
                 from: MAIL_FROM,
                 to: user.email,
-                subject: 'Recuperación de contraseña - Blue Team',
+                subject: 'Recuperación de contraseña - Blue 7eam',
                 html: `
                 <!DOCTYPE html>
                 <html>
@@ -151,35 +151,35 @@ export default async function auth(app: FastifyInstance) {
                 <body>
                   <div class="container">
                     <div class="content">
-                            
+
                       <div class="header">
                          <h1>Recuperación de Acceso</h1>
                       </div>
-                            
+
                       <div class="body">
                         <p>Hola <strong>${user.name}</strong>,</p>
-                        <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>Blue Team Alumnas</strong>.</p>
+                        <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>Blue 7eam Alumnas</strong>.</p>
                         <p>Para crear una contraseña nueva y recuperar el acceso, haz clic en el siguiente botón:</p>
-                            
+
                         <div class="button-container">
                           <a href="${resetUrl}" class="button">Restablecer mi Contraseña</a>
                         </div>
-                            
+
                         <p style="font-size: 14px; color: #666;">
                           O copia y pega este enlace en tu navegador:<br>
                           <a href="${resetUrl}" style="color: #2563EB; word-break: break-all;">${resetUrl}</a>
                         </p>
-                            
+
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                            
+
                         <p style="font-size: 13px; color: #999;">
                           Este enlace expirará en 60 minutos. Si tú no solicitaste este cambio, puedes ignorar este correo de forma segura; tu cuenta sigue protegida.
                         </p>
                       </div>
                     </div>
-                            
+
                     <div class="footer">
-                      <p>© 2025 Blue Team Alumnas. Todos los derechos reservados.</p>
+                      <p>© 2025 Blue 7eam Alumnas. Todos los derechos reservados.</p>
                       <p>
                         Este es un correo automático, por favor no respondas a esta dirección.<br>
                         <a href="${frontendUrl}">Visitar sitio web</a>
