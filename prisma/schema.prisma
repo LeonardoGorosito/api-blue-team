@@ -61,6 +61,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   orders        Order[]
+
+  // --- CAMPOS AGREGADOS (forgotpassword) ---
+  resetToken       String?   @unique // El código secreto
+  resetTokenExpiry DateTime? // Cuándo caduca (ej: en 1 hora)
 }
 
 model Course {
