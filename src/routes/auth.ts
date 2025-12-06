@@ -131,21 +131,63 @@ export default async function auth(app: FastifyInstance) {
                 to: user.email,
                 subject: 'Recuperación de contraseña - Blue Team',
                 html: `
-                    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-                        <div style="background-color: #2563EB; padding: 20px; text-align: center;">
-                             <h2 style="color: white; margin: 0;">Recuperación de Acceso</h2>
-                        </div>
-                        <div style="padding: 20px;">
-                            <p>Hola <strong>${user.name}</strong>,</p>
-                            <p>Hemos recibido una solicitud para restablecer la contraseña.</p>
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <style>
+                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; color: #51545E; margin: 0; padding: 0; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .content { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); overflow: hidden; }
+                    .header { background-color: #2563EB; padding: 30px; text-align: center; }
+                    .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: bold; }
+                    .body { padding: 30px; line-height: 1.6; }
+                    .button-container { text-align: center; margin: 30px 0; }
+                    .button { background-color: #2563EB; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; }
+                    .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+                    .footer a { color: #6b7280; text-decoration: underline; }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="content">
                             
-                            <div style="text-align: center; margin: 30px 0;">
-                                <a href="${resetUrl}" style="background-color: #2563EB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                                    Restablecer Contraseña
-                                </a>
-                            </div>
+                      <div class="header">
+                         <h1>Recuperación de Acceso</h1>
+                      </div>
+                            
+                      <div class="body">
+                        <p>Hola <strong>${user.name}</strong>,</p>
+                        <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>Blue Team Alumnas</strong>.</p>
+                        <p>Para crear una contraseña nueva y recuperar el acceso, haz clic en el siguiente botón:</p>
+                            
+                        <div class="button-container">
+                          <a href="${resetUrl}" class="button">Restablecer mi Contraseña</a>
                         </div>
+                            
+                        <p style="font-size: 14px; color: #666;">
+                          O copia y pega este enlace en tu navegador:<br>
+                          <a href="${resetUrl}" style="color: #2563EB; word-break: break-all;">${resetUrl}</a>
+                        </p>
+                            
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                            
+                        <p style="font-size: 13px; color: #999;">
+                          Este enlace expirará en 60 minutos. Si tú no solicitaste este cambio, puedes ignorar este correo de forma segura; tu cuenta sigue protegida.
+                        </p>
+                      </div>
                     </div>
+                            
+                    <div class="footer">
+                      <p>© 2025 Blue Team Alumnas. Todos los derechos reservados.</p>
+                      <p>
+                        Este es un correo automático, por favor no respondas a esta dirección.<br>
+                        <a href="${frontendUrl}">Visitar sitio web</a>
+                      </p>
+                    </div>
+                  </div>
+                </body>
+                </html>
                 `
             })
 
