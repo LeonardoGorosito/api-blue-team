@@ -91,3 +91,5 @@ Thumbs.db
 # Windows
 Thumbs.db
 ehthumbs.db
+.vercel
+.env*.local

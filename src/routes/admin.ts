@@ -1,75 +1,85 @@
 import type { FastifyInstance, RouteHandlerMethod } from 'fastify'
-import { prisma } from '../db.js' // Asegúrate que la ruta a db.js sea correcta
+import { prisma } from '../db.js'
 import { authenticate } from '../hooks/authenticate.js'
 
 export default async function adminRoutes(app: FastifyInstance) {
   
-  app.get('/health', async () => ({ ok: true }))
-
-  // 2. Endpoint CRM: Obtener alumnas y sus compras
+  // 1. CRM DE ALUMNAS
   const getStudentsHandler: RouteHandlerMethod = async (req: any, reply) => {    
-    // A. Seguridad: Verificar que sea ADMIN
-    // (Asumo que req.user lo llena tu plugin de JWT/Auth)
     if (!req.user || req.user.role !== 'ADMIN') {
-      return reply.code(403).send({ message: 'Acceso denegado: Solo admins' })
+      return reply.code(403).send({ message: 'Acceso denegado' })
     }
 
     try {
-      // B. Consulta a la Base de Datos
       const users = await prisma.user.findMany({
-        where: {
-          role: 'STUDENT' // Solo traemos alumnas, no otros admins
-        },
+        where: { role: 'STUDENT' },
         include: {
-          // Incluimos solo las órdenes PAGADAS para ver qué cursos tienen realmente
           orders: {
             where: { status: 'PAID' }, 
             include: {
-              course: {
-                select: { title: true, price: true, priceUsd: true }
-              },
-              payments: {
-                select: { amount: true } // Para calcular gasto total si quisieras
-              }
+              course: { select: { title: true } },
+              payments: { select: { amount: true } }
             }
           }
         },
-        orderBy: { createdAt: 'desc' } // Las más nuevas primero
+        orderBy: { createdAt: 'desc' }
       })
 
-      // C. Formatear datos para el Frontend
-      // Simplificamos la estructura para que la tabla sea fácil de armar
-      const formattedUsers = users.map(user => {
-        // Obtenemos lista de nombres de cursos
-        const coursesTitles = user.orders.map(o => o.course.title)
-        
-        // Calculamos gasto total aproximado (opcional)
-        // Sumamos los montos de los pagos realizados en las órdenes aprobadas
-        const totalSpent = user.orders.reduce((acc, order) => {
-             const paymentSum = order.payments.reduce((pAcc, p) => pAcc + p.amount, 0)
-             return acc + paymentSum
-        }, 0)
-
-        return {
-          id: user.id,
-          name: user.name,
-          lastname: user.lastname,
-          email: user.email,
-          telegram: user.telegram,
-          createdAt: user.createdAt,
-          purchasedCourses: coursesTitles, // Array simple: ["Master 1", "Curso 2"]
-          totalSpent
-        }
-      })
-
-      return formattedUsers
-
+      return users.map(user => ({
+        id: user.id,
+        name: user.name,
+        lastname: user.lastname,
+        email: user.email,
+        telegram: user.telegram,
+        createdAt: user.createdAt,
+        purchasedCourses: user.orders.map(o => o.course.title),
+        totalSpent: user.orders.reduce((acc, order) => 
+          acc + order.payments.reduce((pAcc, p) => pAcc + p.amount, 0), 0
+        )
+      }))
     } catch (error) {
-      req.log.error(error)
       return reply.code(500).send({ message: 'Error obteniendo alumnas' })
     }
   }
 
-  // D. Registrar la ruta
-  // Asegúrate de que 'app.authenticate' sea el nombre correcto de tu decorador de auth
-app.get('/students', { preHandler: [authenticate] }, getStudentsHandler)}    
+  // 2. CRM DE INGRESOS (REVENUE)
+  const getRevenueHandler: RouteHandlerMethod = async (req: any, reply) => {
+    if (!req.user || req.user.role !== 'ADMIN') {
+      return reply.code(403).send({ message: 'Acceso denegado' })
+    }
+
+    try {
+      const orders = await prisma.order.findMany({
+        where: { status: 'PAID' },
+        include: {
+          user: true,
+          course: true,
+          payments: true
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      return orders.map(order => {
+        const payment = order.payments[0]
+        return {
+          id: order.id,
+          createdAt: order.createdAt,
+          // Manejo de usuario nulo: usamos buyerName de la orden como fallback
+          studentName: order.user ? `${order.user.name} ${order.user.lastname}` : order.buyerName,
+          studentEmail: order.user?.email || order.buyerEmail,
+          courseTitle: order.course.title,
+          // Si no hay registro de pago, usamos el precio del curso
+          amount: payment?.amount || order.course.price,
+          // Si el pago no tiene moneda (común en transferencias), usamos la del curso
+          currency: payment?.currency || order.course.currency || 'ARS'
+        }
+      })
+    } catch (error) {
+      return reply.code(500).send({ message: 'Error obteniendo ingresos' })
+    }
+  }
+
+  // Registro de rutas
+  app.get('/students', { preHandler: [authenticate] }, getStudentsHandler)
+  app.get('/revenue', { preHandler: [authenticate] }, getRevenueHandler)
+}
